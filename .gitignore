@@ -22,3 +22,6 @@ go.work
 
 # OS specific
 .DS_Store
+
+# Binary
+pr-watchtower
