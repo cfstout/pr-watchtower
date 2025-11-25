@@ -17,8 +17,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.store.Close()
 			return m, tea.Quit
 		case "tab":
-			m.activeList = (m.activeList + 1) % 2
-			m.cursor = 0
+			// Only allow switching if both lists have items
+			if len(m.needsReview) > 0 && len(m.myPRs) > 0 {
+				m.activeList = (m.activeList + 1) % 2
+				m.cursor = 0
+			}
 		case "up", "k":
 			if m.cursor > 0 {
 				m.cursor--
@@ -66,6 +69,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.loading = false
 		m.needsReview = msg.incoming
 		m.myPRs = msg.outgoing
+
+		// Auto-focus logic
+		if m.activeList == 0 && len(m.needsReview) == 0 && len(m.myPRs) > 0 {
+			m.activeList = 1
+			m.cursor = 0
+		} else if m.activeList == 1 && len(m.myPRs) == 0 && len(m.needsReview) > 0 {
+			m.activeList = 0
+			m.cursor = 0
+		}
 		// Check status for each PR
 		// Note: This is a side effect in Update, which is fine for now but could be async
 		for _, pr := range m.needsReview {

@@ -56,7 +56,11 @@ func (m Model) View() string {
 		s += m.renderList("My PRs", m.myPRs, m.activeList == 1)
 	}
 
-	s += "\n" + helpStyle.Render("r: refresh • a: agent fix • tab: switch list • q: quit") + "\n"
+	helpText := "r: refresh • a: agent fix • q: quit"
+	if len(m.needsReview) > 0 && len(m.myPRs) > 0 {
+		helpText = "r: refresh • a: agent fix • tab: switch list • q: quit"
+	}
+	s += "\n" + helpStyle.Render(helpText) + "\n"
 	return s
 }
 

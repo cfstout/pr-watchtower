@@ -20,17 +20,9 @@ type PR struct {
 }
 
 func FetchPRs(query string) ([]PR, error) {
-	fmt.Printf("DEBUG: Executing gh search prs with query: %q\n", query)
 	// gh search prs --json number,title,url,state,updatedAt,author --limit 30 <query parts...>
 	args := []string{"search", "prs", "--json", "number,title,url,state,updatedAt,author", "--limit", "30"}
-	// Split query by spaces to pass as separate arguments
-	// This is a simple split; for complex queries with quoted spaces, we'd need a proper parser.
-	// But for our simple config, this should suffice.
-	// Actually, gh search prs takes the query as separate arguments.
-	// If we pass "review-requested:@me state:open" as one arg, gh might be trying to parse it as one token.
-	// Let's try splitting it.
-	queryParts := strings.Fields(query)
-	args = append(args, queryParts...)
+	args = append(args, strings.Fields(query)...)
 
 	cmd := exec.Command("gh", args...)
 	output, err := cmd.Output()
