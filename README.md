@@ -7,6 +7,8 @@ PR Watchtower is a terminal-based tool for monitoring GitHub Pull Requests. It p
 - **Unified Dashboard**: View "Needs Review" and "My PRs" lists in a single TUI.
 - **Real-time Updates**: Automatically refreshes PR status at configurable intervals.
 - **Change Tracking**: Highlights new and updated PRs since you last checked.
+- **Build Status**: Visual indicators for build status (Success, Pending, Failure) and merge conflicts.
+- **PR Management**: Hide/unhide PRs, open in browser, and merge directly from the TUI.
 - **Automation**: Trigger GitHub Actions workflows directly from the TUI (e.g., for auto-fixing or deployment).
 - **Configurable**: Customize search queries and refresh intervals via `config.yaml`.
 
@@ -57,6 +59,10 @@ If you built the binary using the steps above:
 - `Tab`: Switch between "Needs Review" and "My PRs" lists.
 - `j` / `Down`: Move cursor down.
 - `k` / `Up`: Move cursor up.
+- `Enter`: Open selected PR in browser.
+- `h`: Hide/Unhide selected PR.
+- `H`: Toggle visibility of hidden PRs.
+- `m`: Merge selected PR (auto-merge).
 - `r`: Force refresh PRs.
 - `a`: Trigger automation (runs `agent-fix.yml` workflow on selected PR).
 - `q` / `Ctrl+C`: Quit.
