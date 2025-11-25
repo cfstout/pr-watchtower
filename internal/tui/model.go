@@ -19,6 +19,7 @@ type Model struct {
 	cursor      int
 	activeList  int // 0 for Needs Review, 1 for My PRs
 	loading     bool
+	showHidden  bool
 	err         error
 	width       int
 	height      int

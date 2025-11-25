@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
-	"strings"
 	"time"
 )
 
@@ -17,12 +16,50 @@ type PR struct {
 	Author    struct {
 		Login string `json:"login"`
 	} `json:"author"`
+	Mergeable         string `json:"mergeable"`
+	StatusCheckRollup struct {
+		State string `json:"state"`
+	} `json:"statusCheckRollup"`
+}
+
+type graphQLResponse struct {
+	Data struct {
+		Search struct {
+			Nodes []PR `json:"nodes"`
+		} `json:"search"`
+	} `json:"data"`
 }
 
 func FetchPRs(query string) ([]PR, error) {
-	// gh search prs --json number,title,url,state,updatedAt,author --limit 30 <query parts...>
-	args := []string{"search", "prs", "--json", "number,title,url,state,updatedAt,author", "--limit", "30"}
-	args = append(args, strings.Fields(query)...)
+	// Construct GraphQL query
+	gqlQuery := `
+		query($q: String!) {
+			search(query: $q, type: ISSUE, first: 30) {
+				nodes {
+					... on PullRequest {
+						number
+						title
+						url
+						state
+						updatedAt
+						author {
+							login
+						}
+						mergeable
+						statusCheckRollup {
+							state
+						}
+					}
+				}
+			}
+		}
+	`
+
+	// gh api graphql -f q='<query>' -f query='<gqlQuery>'
+	// We need to pass the search query as a variable.
+	// Note: The user's config query might contain spaces and special chars.
+
+	args := []string{"api", "graphql", "-f", fmt.Sprintf("q=%s", query), "-f", fmt.Sprintf("query=%s", gqlQuery)}
 
 	cmd := exec.Command("gh", args...)
 	output, err := cmd.Output()
@@ -33,9 +70,16 @@ func FetchPRs(query string) ([]PR, error) {
 		return nil, fmt.Errorf("failed to run gh command: %w", err)
 	}
 
-	var prs []PR
-	if err := json.Unmarshal(output, &prs); err != nil {
+	var resp graphQLResponse
+	if err := json.Unmarshal(output, &resp); err != nil {
 		return nil, fmt.Errorf("failed to parse gh output: %w", err)
+	}
+
+	var prs []PR
+	for _, node := range resp.Data.Search.Nodes {
+		if node.Number != 0 {
+			prs = append(prs, node)
+		}
 	}
 
 	return prs, nil
@@ -44,5 +88,11 @@ func FetchPRs(query string) ([]PR, error) {
 func TriggerWorkflow(prNumber int) error {
 	// gh workflow run agent-fix.yml -f pr_number=<prNumber>
 	cmd := exec.Command("gh", "workflow", "run", "agent-fix.yml", "-f", fmt.Sprintf("pr_number=%d", prNumber))
+	return cmd.Run()
+}
+
+func MergePR(prNumber int) error {
+	// gh pr merge <number> --merge --auto
+	cmd := exec.Command("gh", "pr", "merge", fmt.Sprintf("%d", prNumber), "--merge", "--auto")
 	return cmd.Run()
 }

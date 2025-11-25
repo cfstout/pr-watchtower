@@ -39,11 +39,20 @@ func initSchema(db *sql.DB) error {
 	CREATE TABLE IF NOT EXISTS pr_state (
 		pr_id INTEGER PRIMARY KEY,
 		updated_at TEXT NOT NULL,
-		last_seen_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		last_seen_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		hidden BOOLEAN DEFAULT 0
 	);
 	`
 	_, err := db.Exec(query)
-	return err
+	if err != nil {
+		return err
+	}
+
+	// Migration: Add hidden column if it doesn't exist
+	// We can ignore error if column already exists
+	_, _ = db.Exec("ALTER TABLE pr_state ADD COLUMN hidden BOOLEAN DEFAULT 0")
+
+	return nil
 }
 
 type PRStatus string
@@ -67,9 +76,6 @@ func (s *Store) CheckUpdateStatus(prID int, currentUpdatedAt time.Time) (PRStatu
 		}
 		return StatusNew, nil
 	} else if err != nil {
-		// If table schema is old (head_sha), this might fail.
-		// For simplicity in this fix, if we error, we might want to try to drop/recreate or just fail.
-		// Let's assume we can just fail for now, user can delete db file if needed.
 		return "", err
 	}
 
@@ -83,6 +89,23 @@ func (s *Store) CheckUpdateStatus(prID int, currentUpdatedAt time.Time) (PRStatu
 	}
 
 	return StatusSeen, nil
+}
+
+func (s *Store) IsHidden(prID int) (bool, error) {
+	var hidden bool
+	err := s.db.QueryRow("SELECT hidden FROM pr_state WHERE pr_id = ?", prID).Scan(&hidden)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	return hidden, err
+}
+
+func (s *Store) SetHidden(prID int, hidden bool) error {
+	// Ensure record exists first (it should if we are interacting with it, but just in case)
+	// Actually, if we are hiding it, we might not have seen it yet? No, we only list fetched PRs.
+	// But CheckUpdateStatus is called on load. So it should exist.
+	_, err := s.db.Exec("UPDATE pr_state SET hidden = ? WHERE pr_id = ?", hidden, prID)
+	return err
 }
 
 func (s *Store) Close() error {
