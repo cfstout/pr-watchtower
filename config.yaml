@@ -1,0 +1,5 @@
+github:
+  refresh_interval: 2m
+  queries:
+    needs_review: "review-requested:@me state:open"
+    my_prs: "author:@me state:open"
