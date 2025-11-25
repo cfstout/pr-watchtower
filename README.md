@@ -28,7 +28,17 @@ go build -o pr-watchtower ./cmd/watchtower
 
 ## Usage
 
-Run the application:
+### Development / Quick Run
+
+You can run the application directly without building:
+
+```bash
+go run ./cmd/watchtower
+```
+
+### Run Binary
+
+If you built the binary using the steps above:
 
 ```bash
 ./pr-watchtower
