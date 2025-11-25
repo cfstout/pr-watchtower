@@ -28,7 +28,15 @@ go build -o pr-watchtower ./cmd/watchtower
 
 ## Usage
 
-### Development / Quick Run
+### Quick Start (Makefile)
+
+- **Run**: `make run` (or just `make`)
+- **Build**: `make build`
+- **Clean**: `make clean`
+
+### Manual Commands
+
+#### Development / Quick Run
 
 You can run the application directly without building:
 
